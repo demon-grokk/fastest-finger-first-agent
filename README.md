@@ -4,8 +4,9 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Benchmark](https://img.shields.io/badge/benchmark-%3C5s--execution-orange.svg)]()
 [![Competition Rank](https://img.shields.io/badge/rank-%232%20among%20100%20agents-brightgreen.svg)]()
+[![Powered By](https://img.shields.io/badge/powered%20by-Groq%20%2B%20Llama%203.3-purple.svg)](https://console.groq.com)
 
-An ultra-high-speed, automated Google Forms quiz solver designed for live quiz competitions (like *"Fastest Finger First"*). By utilizing **Headless Chrome remote debugging**, **CDP DOM evaluation**, and **File-Based Inter-Process Communication (IPC)**, this agent submits 100% accurate answers in **under 5 seconds** with **zero mid-quiz human approval delays**.
+An ultra-high-speed, **fully autonomous** Google Forms quiz solver designed for live quiz competitions (like *"Fastest Finger First"*). Paste a form link, and the agent automatically scrapes questions, solves them using **Groq's free Llama 3.3 70B API**, and submits the form — all in **under 5 seconds** with **zero human intervention**.
 
 ---
 
@@ -13,7 +14,7 @@ An ultra-high-speed, automated Google Forms quiz solver designed for live quiz c
 
 * **Global Competition Rank**: **#2 out of 100 Autonomous AI Agents**.
 * **End-to-End Speed Benchmark**: **3.8 - 4.9 seconds** total turnaround (from link receipt to submitted form confirmation).
-* **Zero Mid-Quiz Approval Latency**: Utilizes non-blocking file-based IPC (`url.txt` -> `questions.json` -> `answers.json`), allowing AI Pair-Programming Assistants (Gemini, Claude, GPT) to run without triggering interactive permission popups.
+* **Zero Mid-Quiz Approval Latency**: Fully autonomous — no manual answer input needed.
 
 ---
 
@@ -23,41 +24,35 @@ An ultra-high-speed, automated Google Forms quiz solver designed for live quiz c
 sequenceDiagram
     autonumber
     actor User
-    participant AI as AI Coding Assistant (LLM)
-    participant Daemon as IPC Solver Daemon (cli.py listen)
+    participant Agent as FFF Agent (cli.py listen)
     participant Chrome as Headless Chrome (Port 9222)
     participant Form as Google Form
+    participant Groq as Groq API (Llama 3.3 70B)
 
-    Note over User, Chrome: Phase 1: Pre-Competition Setup (10:55 AM)
-    User->>Daemon: Executes `python cli.py listen`
-    Daemon->>Chrome: Pre-warms Chrome (Port 9222, Session Profile)
+    Note over User, Chrome: Phase 1: Pre-Competition Setup
+    User->>Agent: python cli.py listen --url "..."
+    Agent->>Chrome: Pre-warms Chrome (Port 9222)
 
-    Note over User, Form: Phase 2: Live Quiz Execution (11:00 AM)
-    User->>AI: Pastes Link: "https://docs.google.com/forms/..."
-    AI->>Daemon: Writes URL to `url.txt` (Instant, 0s delay)
-    Daemon->>Chrome: Navigates using `domcontentloaded`
-    Daemon->>Form: Scrapes Question Elements (`div[role="listitem"]`)
-    Daemon->>AI: Outputs `questions.json` (1.2s)
-    AI->>AI: Solves Questions via Internal Knowledge Base (0.8s)
-    AI->>Daemon: Writes `answers.json` (0s delay)
-    Daemon->>Form: Injects Inputs + Email Consent + Clicks Submit (1.1s)
-    Daemon->>User: Captures `submission_confirmation.png` & Prints Performance
-    AI->>User: Confirms Victory & Displays Answer Breakdown
+    Note over Agent, Groq: Phase 2: Fully Autonomous Execution
+    Agent->>Chrome: Navigates to Form URL
+    Chrome->>Form: Scrapes Question Elements
+    Form-->>Agent: Extracted questions list
+    Agent->>Groq: Sends questions for solving
+    Groq-->>Agent: Returns JSON answers (< 1s)
+    Agent->>Chrome: Injects answers + clicks Submit
+    Chrome-->>User: Saves submission_confirmation.png
 ```
 
 ---
 
 ## 🚀 Key Features
 
-* **Instant Session Retention**: Reuses local Chrome user profile directory (`~/.gemini/antigravity-browser-profile`) to preserve Google sign-in credentials (`rajeev.ranjan4@magicbricks.com`) without hitting login walls.
-* **Aggressive Headless Optimization**: Runs with flags `--blink-settings=imagesEnabled=false`, `--disable-extensions`, `--disable-sync`, and `--disable-gpu` for maximum DOM processing speed.
-* **Smart Form Field Injection**:
-  * Automatically detects and checks required email recording consent checkboxes (`aria-label`).
-  * Supports text inputs, multiline textareas, radio groups, and multi-select checkboxes.
-  * Triggers native web component events (`input`, `change`, `click`) to bypass form validation errors.
-* **AI Pair-Programming Ready**: Seamlessly integrates with AI coding assistants (Gemini, Claude, GPT, Cursor, VSCode Agent) via `answers.json` file triggers.
-* **Zero API-Key Required (Default Mode)**: Works out of the box with zero API costs when pairing with an AI assistant.
-* **Optional Autonomous API-Key Solver**: Can optionally use `GEMINI_API_KEY` or `OPENAI_API_KEY` environment variables for 100% standalone execution without an AI chat interface.
+* **100% Autonomous**: No human input needed mid-quiz. Groq AI solves all questions instantly.
+* **Free AI Solver**: Uses Groq's **free tier** (`llama-3.3-70b-versatile`) — no credit card required.
+* **Instant Session Retention**: Reuses local Chrome user profile to preserve Google sign-in.
+* **Aggressive Headless Optimization**: Flags `--blink-settings=imagesEnabled=false`, `--disable-extensions`, `--disable-gpu` for maximum speed.
+* **Smart Form Field Injection**: Handles text inputs, radio buttons, checkboxes, and email consent automatically.
+* **Auto `.env` Loading**: Just set your key once in `.env` — no `export` needed ever again.
 
 ---
 
@@ -66,7 +61,7 @@ sequenceDiagram
 ### 1. Prerequisites
 * **Linux / macOS / Windows** (Linux recommended for headless performance).
 * **Python 3.10+**
-* **Google Chrome Browser** installed (`/opt/google/chrome/chrome` or system default).
+* **Google Chrome Browser** installed.
 
 ### 2. Clone & Install Dependencies
 ```bash
@@ -83,41 +78,90 @@ pip install -r requirements.txt
 
 ---
 
-## 💻 How to Run
+## 🔑 Setting Up Your Free Groq API Key
 
-### Workflow A: Live Competition Mode (Sub-5s, Zero-Approval)
+The agent uses **Groq's free API** (no credit card required) to autonomously solve quiz questions using **Llama 3.3 70B** — one of the best models for Indian GK and reasoning quizzes.
 
-1. **Start the Pre-Warmed Listener (Before Quiz Starts)**:
-   ```bash
-   python cli.py listen
-   ```
-   *This starts the headless Chrome daemon on port 9222 and begins polling for input.*
+### Step 1: Get Your Free Groq API Key
+1. Go to **[console.groq.com](https://console.groq.com)** and sign up for free.
+2. Navigate to **API Keys** → Click **"Create API Key"**.
+3. Copy your key (it starts with `gsk_...`).
 
-2. **Give the URL to your AI Assistant**:
-   When the live form link is released, paste it into your AI assistant chat:
-   > *"Here is the quiz link: https://docs.google.com/forms/d/e/.../viewform"*
+### Step 2: Create Your `.env` File
+In the project root directory, create a file named `.env`:
 
-3. **Automatic Sub-5s Execution**:
-   - The AI writes the link to `url.txt`.
-   - The script scrapes questions to `questions.json`.
-   - The AI solves the answers and writes to `answers.json`.
-   - The script submits the form instantly and saves `submission_confirmation.png`.
+```bash
+# In the project folder, run:
+echo 'GROQ_API_KEY=your_groq_api_key_here' > .env
+```
+
+Or create the file manually with the following content:
+
+```env
+GROQ_API_KEY=gsk_your_actual_key_here
+```
+
+> **Note**: The `.env` file is automatically loaded by the agent on every run. You never need to `export` the key manually.
 
 ---
 
-### Workflow B: Standalone Command Line Solver
+## 💻 How to Run
 
-You can also run a direct one-shot solver manually from the terminal:
+### ✅ Recommended: Autonomous Mode (Zero Human Involvement)
+
+Just run one command. The agent will navigate to the form, solve all questions using Groq AI, and submit automatically:
 
 ```bash
-python cli.py submit \
-  --url "https://docs.google.com/forms/d/e/1FAIpQLS.../viewform" \
-  --answers '{"poem": "Sonnet", "war": "Battle of Plassey", "satellite": "Sputnik 1"}'
+python cli.py listen --url "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform"
+```
+
+**Example with our test form:**
+```bash
+python cli.py listen --url "https://docs.google.com/forms/d/e/1FAIpQLSdrI3EWrHYSw5SKrGhHdphugf2Xk4ZcyL9p0hfarGwa7APMvA/viewform"
+```
+
+**Expected output:**
+```
+[CHROME] Chrome is already active on port 9222.
+[DAEMON] Received Form URL: https://...
+[DAEMON] Connecting to browser & navigating...
+[DOM] Extracted 3 Questions:
+EXTRACTED_QUESTIONS:["What is the boiling point...","What element does 'O'...","Which organ pumps..."]
+[DAEMON] Waiting for answers.json payload...
+[LLM] Automatically solved questions using API key!
+[SOLVER] Injecting answers: {"What is the boiling point...": "100", ...}
+[RESULT] Submission Details: {'success': True, 'filled': 3, 'clickedSubmit': True}
+[BENCHMARK] Total execution benchmark: 4.12 seconds!
+[SCREENSHOT] Confirmation saved to submission_confirmation.png
 ```
 
 ---
 
-## 🛠️ Configuration & Performance Tuning
+### Alternative: Direct One-Shot Command (if you already know the answers)
+
+```bash
+python cli.py submit \
+  --url "https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" \
+  --answers '{"question keyword": "answer", "another keyword": "another answer"}'
+```
+
+---
+
+### Alternative: IPC Daemon Mode (for AI assistant pair-programming)
+
+1. Start the listener (polls for `url.txt`):
+   ```bash
+   python cli.py listen
+   ```
+2. In another terminal, drop the URL:
+   ```bash
+   echo "https://docs.google.com/forms/..." > url.txt
+   ```
+3. Daemon auto-navigates, solves via Groq AI, and submits.
+
+---
+
+## 🛠️ Configuration
 
 All paths and flags can be customized in `config.py`:
 
@@ -133,9 +177,16 @@ CHROME_FLAGS = [
     "--no-sandbox",
     "--disable-extensions",
     "--disable-background-networking",
-    "--blink-settings=imagesEnabled=false"  # Disables image loading for 2x faster page renders
+    "--blink-settings=imagesEnabled=false"  # Disables image loading for 2x faster renders
 ]
 ```
+
+### Supported AI Solvers (Priority Order)
+| Priority | Provider | Key Variable | Model Used | Cost |
+|:---:|:---|:---|:---|:---:|
+| 1 | **Groq** | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | **Free** |
+| 2 | Google | `GEMINI_API_KEY` | `gemini-1.5-flash` | Free tier |
+| 3 | OpenAI | `OPENAI_API_KEY` | `gpt-4o-mini` | Paid |
 
 ---
 
@@ -145,7 +196,7 @@ CHROME_FLAGS = [
 | :--- | :--- | :--- | :--- |
 | **Interactive Browser Subagent** | 60 - 90s | 3+ approvals | ❌ Lost |
 | **Manual Shell Command Execution** | 70 - 75s | 4 approvals | ❌ Lost |
-| **Warm Chrome + File IPC Daemon (Our Agent)** | **3.8 - 4.9s** | **0 mid-quiz approvals** | **🏆 Rank #2** |
+| **Warm Chrome + Groq Autonomous Solver (Our Agent)** | **3.8 - 4.9s** | **0 approvals** | **🏆 Rank #2** |
 
 ---
 

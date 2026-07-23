@@ -63,6 +63,7 @@ async def listen_and_solve(url_override: str = None):
 
     print("\n[DAEMON] Waiting for answers.json payload...")
 
+    answers = None
     # Optional Auto-Solve via API Key if configured
     from src.llm_client import solve_questions_with_llm
     auto_answers = solve_questions_with_llm(questions)

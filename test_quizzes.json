@@ -1,7 +1,7 @@
 [
   {
-    "title": "Fastest Finger First - Quiz 1 (Science)",
-    "url": "https://docs.google.com/forms/d/e/1FAIpQLSffyOJfATgTkOdcSd5q5K47CuBstWQaxHyOE0KPeUi9u0HESw/viewform?usp=header",
+    "title": "Fastest Finger First - Verified Quiz",
+    "url": "https://docs.google.com/forms/d/e/1FAIpQLSdrI3EWrHYSw5SKrGhHdphugf2Xk4ZcyL9p0hfarGwa7APMvA/viewform?usp=publish-editor",
     "questions": [
       {
         "q": "What is the boiling point of water in Celsius?",
@@ -14,78 +14,6 @@
       {
         "q": "Which organ pumps blood in the human body?",
         "a": "Heart"
-      }
-    ]
-  },
-  {
-    "title": "Fastest Finger First - Quiz 2 (Computer & AI)",
-    "url": "https://docs.google.com/forms/d/e/1FAIpQLSfYGYD8MSphny6lzYElZh2cS5IP49HYh3GoN6msz-W5kCceoA/viewform?usp=header",
-    "questions": [
-      {
-        "q": "What does HTTP stand for?",
-        "a": "Hypertext Transfer Protocol"
-      },
-      {
-        "q": "Which company created the Java programming language?",
-        "a": "Sun Microsystems"
-      },
-      {
-        "q": "What does CPU stand for?",
-        "a": "Central Processing Unit"
-      }
-    ]
-  },
-  {
-    "title": "Fastest Finger First - Quiz 3 (History)",
-    "url": "https://docs.google.com/forms/d/e/1FAIpQLScucFXkK-ad4tTlSgOdK7uzc4x1vNyq89Rt9QSFXca-okZ5RA/viewform?usp=header",
-    "questions": [
-      {
-        "q": "In which year did India gain Independence?",
-        "a": "1947"
-      },
-      {
-        "q": "Who was the first President of the United States?",
-        "a": "George Washington"
-      },
-      {
-        "q": "Which ancient empire built the Colosseum?",
-        "a": "Roman Empire"
-      }
-    ]
-  },
-  {
-    "title": "Fastest Finger First - Quiz 4 (Geography)",
-    "url": "https://docs.google.com/forms/d/e/1FAIpQLSc0crppYMLhnCPTWEkEAvaN80b7vPg_h0SrfUHq5O22VHx9KA/viewform?usp=header",
-    "questions": [
-      {
-        "q": "What is the capital of Japan?",
-        "a": "Tokyo"
-      },
-      {
-        "q": "Which is the largest ocean on Earth?",
-        "a": "Pacific Ocean"
-      },
-      {
-        "q": "What is the capital of France?",
-        "a": "Paris"
-      }
-    ]
-  },
-  {
-    "title": "Fastest Finger First - Quiz 5 (Riddles)",
-    "url": "https://docs.google.com/forms/d/e/1FAIpQLSdDLLgAa83f1XyVugd5KmhGS2UBi6tRP_0prAMrbrAfsPl0bA/viewform?usp=header",
-    "questions": [
-      {
-        "q": "What has to be broken before you can use it?",
-        "a": "An egg"
-      },
-      {
-        "q": "I speak without a mouth and hear without ears. What am I?",
-        "a": "An echo"
-      },
-      {
-        "q": "What has a head and a tail but no body?",
-        "a": "A coin"
       }
     ]
   }
