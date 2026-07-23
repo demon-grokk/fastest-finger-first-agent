@@ -98,10 +98,58 @@ async def create_single_form(browser, spec):
         await page.keyboard.type(q_info['q'])
         await asyncio.sleep(1)
 
-    # Wait for Auto-Save to synchronize with Google Drive
-    await asyncio.sleep(5)
+    # 4. Turn OFF MagicBricks Domain Restriction (Make Form Public)
+    print("   Making form public (removing domain restriction)...")
+    await page.evaluate('''() => {
+        // Switch to Settings Tab
+        const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+        const settingsTab = tabs.find(t => t.textContent.includes('Settings'));
+        if (settingsTab) settingsTab.click();
+    }''')
+    await asyncio.sleep(2)
 
-    # 4. Open Send Dialog & Get URL
+    # Expand Responses dropdown and disable restriction
+    await page.evaluate('''() => {
+        // Find and click the Responses expand header if it's not already open
+        const headers = Array.from(document.querySelectorAll('div'));
+        const respHeader = headers.find(h => h.textContent.trim().startsWith('Responses'));
+        if (respHeader) respHeader.click();
+    }''')
+    await asyncio.sleep(1.5)
+
+    await page.evaluate('''() => {
+        // Find the Restrict toggle and switch it OFF
+        const toggles = Array.from(document.querySelectorAll('[role="checkbox"], [role="switch"]'));
+        const restrictToggle = toggles.find(t => {
+            const container = t.closest('div');
+            // Try to find if parent container text mentions Restrict to MagicBricks
+            let current = container;
+            for (let i = 0; i < 5 && current; i++) {
+                if (current.textContent.includes('Restrict to users in') || current.textContent.includes('MagicBricks')) {
+                    return true;
+                }
+                current = current.parentElement;
+            }
+            return false;
+        });
+        if (restrictToggle && restrictToggle.getAttribute('aria-checked') === 'true') {
+            restrictToggle.click();
+        }
+    }''')
+    await asyncio.sleep(2)
+
+    # Switch back to Questions tab before saving/sending
+    await page.evaluate('''() => {
+        const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+        const qTab = tabs.find(t => t.textContent.includes('Questions'));
+        if (qTab) qTab.click();
+    }''')
+    await asyncio.sleep(1.5)
+
+    # Wait for Auto-Save to synchronize with Google Drive
+    await asyncio.sleep(4)
+
+    # 5. Open Send Dialog & Get URL
     preview_url = None
     
     # Click Send button
