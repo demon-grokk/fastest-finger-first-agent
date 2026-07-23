@@ -1,0 +1,21 @@
+# Environments
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Real-time IPC files
+url.txt
+questions.json
+answers.json
+submission_confirmation.png
+quiz_*_result.png
+
+# User profiles & logs
+.gemini/
+*.log
