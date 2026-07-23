@@ -1,5 +1,6 @@
 import asyncio
 import json
+import time
 from pyppeteer import connect
 
 QUIZZES_SPEC = [
@@ -15,7 +16,7 @@ QUIZZES_SPEC = [
         "title": "Fastest Finger First - Quiz 2 (Computer & AI)",
         "questions": [
             {"q": "What does HTTP stand for?", "a": "Hypertext Transfer Protocol"},
-            {"q": "Which company created Java programming language?", "a": "Sun Microsystems"},
+            {"q": "Which company created the Java programming language?", "a": "Sun Microsystems"},
             {"q": "What does CPU stand for?", "a": "Central Processing Unit"}
         ]
     },
@@ -45,61 +46,100 @@ QUIZZES_SPEC = [
     }
 ]
 
-async def create_active_quiz(browser, spec):
+async def create_single_form(browser, spec):
     page = await browser.newPage()
     print(f"\n[BUILDING QUIZ] {spec['title']}...")
-    await page.goto('https://docs.google.com/forms/u/0/create', {'waitUntil': 'domcontentloaded'})
-    await asyncio.sleep(2)
+    
+    # Open form editor and wait until page is fully loaded
+    await page.goto('https://docs.google.com/forms/u/0/create', {'waitUntil': 'networkidle2'})
+    await asyncio.sleep(4)
 
-    # 1. Title
-    await page.evaluate('''(title) => {
-        const titleEl = document.querySelector('[aria-label="Form title"]');
-        if (titleEl) {
-            titleEl.focus();
-            document.execCommand('selectAll', false, null);
-            document.execCommand('insertText', false, title);
-        }
-    }''', spec['title'])
+    # 1. Focus and Type Title
+    title_selector = 'div[aria-label="Form title"]'
+    await page.waitForSelector(title_selector)
+    await page.click(title_selector)
+    await asyncio.sleep(0.5)
+    
+    # Clear and Type
+    await page.keyboard.down('Control')
+    await page.keyboard.press('KeyA')
+    await page.keyboard.up('Control')
+    await page.keyboard.press('Backspace')
+    await asyncio.sleep(0.3)
+    await page.keyboard.type(spec['title'])
     await asyncio.sleep(1)
 
-    # 2. Add Questions
-    for idx, q_info in enumerate(spec['questions']):
-        if idx > 0:
-            await page.evaluate('''() => {
-                const addBtn = document.querySelector('[aria-label="Add question"], [data-tooltip="Add question"]');
-                if (addBtn) addBtn.click();
-            }''')
-            await asyncio.sleep(1)
+    # 2. Focus and Type First Question
+    q_selector = 'div[aria-label="Question"]'
+    await page.waitForSelector(q_selector)
+    await page.click(q_selector)
+    await asyncio.sleep(0.5)
+    
+    await page.keyboard.down('Control')
+    await page.keyboard.press('KeyA')
+    await page.keyboard.up('Control')
+    await page.keyboard.press('Backspace')
+    await asyncio.sleep(0.3)
+    await page.keyboard.type(spec['questions'][0]['q'])
+    await asyncio.sleep(1)
 
-        await page.evaluate('''(qText, idx) => {
-            const qInputs = Array.from(document.querySelectorAll('[aria-label="Question"]'));
-            const target = qInputs[idx] || qInputs[qInputs.length - 1];
-            if (target) {
-                target.focus();
-                document.execCommand('selectAll', false, null);
-                document.execCommand('insertText', false, qText);
-            }
-        }''', q_info['q'], idx)
-        await asyncio.sleep(0.5)
+    # 3. Add subsequent questions via Keyboard Shortcuts
+    for q_info in spec['questions'][1:]:
+        print(f"   Adding question: {q_info['q']}")
+        # Ctrl + Shift + Enter
+        await page.keyboard.down('Control')
+        await page.keyboard.down('Shift')
+        await page.keyboard.press('Enter')
+        await page.keyboard.up('Shift')
+        await page.keyboard.up('Control')
+        await asyncio.sleep(2) # wait for new question input to mount and focus
+        
+        # Type question text directly into the focused field
+        await page.keyboard.type(q_info['q'])
+        await asyncio.sleep(1)
 
-    await asyncio.sleep(2)
+    # Wait for Auto-Save to synchronize with Google Drive
+    await asyncio.sleep(5)
 
-    # 3. Click Preview button to open fillable form
+    # 4. Open Send Dialog & Get URL
     preview_url = None
-    def on_target_created(target):
-        nonlocal preview_url
-        if 'viewform' in target.url:
-            preview_url = target.url
-
-    browser.on('targetcreated', on_target_created)
-
+    
+    # Click Send button
     await page.evaluate('''() => {
-        const prevBtn = Array.from(document.querySelectorAll('[role="button"], a')).find(b => b.getAttribute('aria-label') === 'Preview' || b.getAttribute('data-tooltip') === 'Preview');
-        if (prevBtn) prevBtn.click();
+        const btns = Array.from(document.querySelectorAll('[role="button"]'));
+        const sendBtn = btns.find(b => b.textContent.trim().toLowerCase() === 'send');
+        if (sendBtn) sendBtn.click();
     }''')
-    await asyncio.sleep(2.5)
+    await asyncio.sleep(3)
+
+    # Click Link tab in dialog
+    await page.evaluate('''() => {
+        const tabs = Array.from(document.querySelectorAll('[role="tab"], div[aria-label*="Link"]'));
+        const linkTab = tabs.find(t => (t.getAttribute('aria-label') || '').includes('Link') || t.innerHTML.includes('path') || t.textContent.includes('link') || t.outerHTML.includes('link'));
+        if (linkTab) linkTab.click();
+        
+        const icons = Array.from(document.querySelectorAll('.quantumWizDialogPapercanvasEl, div'));
+        const linkIcon = icons.find(i => i.getAttribute('aria-label') === 'Link');
+        if (linkIcon) linkIcon.click();
+    }''')
+    await asyncio.sleep(3)
+
+    # Extract real published viewform link
+    preview_url = await page.evaluate('''() => {
+        const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
+        const linkInput = inputs.find(i => i.value && i.value.includes('forms/d/e/'));
+        if (linkInput) return linkInput.value;
+        return null;
+    }''')
 
     if not preview_url:
+        print("[WARNING] Link tab failed. Falling back to preview tab...")
+        # Fallback to preview button
+        await page.evaluate('''() => {
+            const prevBtn = Array.from(document.querySelectorAll('[role="button"], a')).find(b => b.getAttribute('aria-label') === 'Preview' || b.getAttribute('data-tooltip') === 'Preview');
+            if (prevBtn) prevBtn.click();
+        }''')
+        await asyncio.sleep(3)
         pages = await browser.pages()
         for p in pages:
             if 'viewform' in p.url:
@@ -117,8 +157,19 @@ async def create_active_quiz(browser, spec):
 async def main():
     browser = await connect(browserURL='http://127.0.0.1:9222')
     quizzes = []
+    
+    # Close any old viewform/edit tabs first to start fresh
+    pages = await browser.pages()
+    for p in pages:
+        if 'viewform' in p.url or 'edit' in p.url:
+            if len(await browser.pages()) > 1:
+                try:
+                    await p.close()
+                except Exception:
+                    pass
+
     for spec in QUIZZES_SPEC:
-        q_item = await create_active_quiz(browser, spec)
+        q_item = await create_single_form(browser, spec)
         quizzes.append(q_item)
 
     out_file = '/home/rajeev/Data/Personal Project/fastest-finger-first-agent/test_quizzes.json'

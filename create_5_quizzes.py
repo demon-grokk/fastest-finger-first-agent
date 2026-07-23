@@ -51,37 +51,45 @@ async def create_single_form(browser, quiz_info):
     print(f"\n[CREATING] {quiz_info['title']}...")
     await page.goto('https://docs.google.com/forms/u/0/create', {'waitUntil': 'domcontentloaded'})
     await page.waitForSelector('[aria-label="Form title"]')
+    await asyncio.sleep(2)
 
-    # 1. Set Form Title
+    # 1. Set Form Title via execCommand and input event
     await page.evaluate('''(title) => {
         const titleEl = document.querySelector('[aria-label="Form title"]');
         if (titleEl) {
-            titleEl.textContent = title;
+            titleEl.focus();
+            document.execCommand('selectAll', false, null);
+            document.execCommand('insertText', false, title);
             titleEl.dispatchEvent(new Event('input', { bubbles: true }));
         }
     }''', quiz_info['title'])
+    await asyncio.sleep(1)
 
     # 2. Add Questions
     for idx, q_data in enumerate(quiz_info['questions']):
         if idx > 0:
-            # Click "Add question" (+) button
+            # Click "Add question" (+) button safely via JS
             await page.evaluate('''() => {
-                const addBtn = document.querySelector('[aria-label="Add question"], [data-tooltip="Add question"]');
-                if (addBtn) addBtn.click();
+                const addBtns = Array.from(document.querySelectorAll('[aria-label="Add question"], [data-tooltip="Add question"]'));
+                const visibleBtn = addBtns.find(b => b.offsetWidth > 0);
+                if (visibleBtn) visibleBtn.click();
             }''')
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
 
-        # Populate question text
+        # Populate question text via execCommand and input event
         await page.evaluate('''(qText, qIdx) => {
             const questionInputs = Array.from(document.querySelectorAll('[aria-label="Question"]'));
-            const targetInput = questionInputs[qIdx] || questionInputs[questionInputs.length - 1];
+            const targetInput = questionInputs[questionInputs.length - 1]; // select newly added question
             if (targetInput) {
-                targetInput.textContent = qText;
+                targetInput.focus();
+                document.execCommand('selectAll', false, null);
+                document.execCommand('insertText', false, qText);
                 targetInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }''', q_data['q'], idx)
+        await asyncio.sleep(0.8)
 
-    await asyncio.sleep(2)
+    await asyncio.sleep(4) # Wait for auto-save
 
     # 3. Click Send button to open sharing dialog and extract published link
     await page.evaluate('''() => {
@@ -89,23 +97,42 @@ async def create_single_form(browser, quiz_info):
         const sendBtn = btns.find(b => b.textContent.trim().toLowerCase() === 'send');
         if (sendBtn) sendBtn.click();
     }''')
-    await asyncio.sleep(1.5)
+    await asyncio.sleep(2)
 
     # Click Link tab
     await page.evaluate('''() => {
         const tabs = Array.from(document.querySelectorAll('[role="tab"], div[aria-label*="Link"]'));
-        const linkTab = tabs.find(t => (t.getAttribute('aria-label') || '').includes('Link') || t.innerHTML.includes('path'));
+        const linkTab = tabs.find(t => (t.getAttribute('aria-label') || '').includes('Link') || t.innerHTML.includes('path') || t.textContent.includes('link') || t.outerHTML.includes('link'));
         if (linkTab) linkTab.click();
+        
+        // Alternative selection
+        const icons = Array.from(document.querySelectorAll('.quantumWizDialogPapercanvasEl, div'));
+        const linkIcon = icons.find(i => i.getAttribute('aria-label') === 'Link');
+        if (linkIcon) linkIcon.click();
     }''')
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
 
     # Extract real published viewform link
     view_url = await page.evaluate('''() => {
         const inputs = Array.from(document.querySelectorAll('input[type="text"]'));
         const linkInput = inputs.find(i => i.value && i.value.includes('forms/d/e/'));
         if (linkInput) return linkInput.value;
-        return window.location.href.split('/edit')[0] + '/viewform';
+        return null;
     }''')
+
+    if not view_url:
+        print("[WARNING] Could not extract link from Send dialog. Falling back to Preview...")
+        # Fallback to preview url
+        await page.evaluate('''() => {
+            const prevBtn = Array.from(document.querySelectorAll('[role="button"], a')).find(b => b.getAttribute('aria-label') === 'Preview' || b.getAttribute('data-tooltip') === 'Preview');
+            if (prevBtn) prevBtn.click();
+        }''')
+        await asyncio.sleep(3)
+        pages = await browser.pages()
+        for p in pages:
+            if 'viewform' in p.url:
+                view_url = p.url
+                break
 
     await page.close()
     return {
@@ -121,7 +148,7 @@ async def main():
     for quiz in QUIZZES_DATA:
         quiz_res = await create_single_form(browser, quiz)
         created_quizzes.append(quiz_res)
-        print(f"[CREATED] URL: {quiz_res['url']}")
+        print(f"[CREATED] {quiz_res['title']} -> URL: {quiz_res['url']}")
 
     with open('/home/rajeev/Data/Personal Project/fastest-finger-first-agent/test_quizzes.json', 'w') as f:
         json.dump(created_quizzes, f, indent=2)
