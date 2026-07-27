@@ -72,14 +72,14 @@ def get_chrome_executable() -> str:
 
 CHROME_DEBUG_PORT = 9222
 CHROME_DEBUG_URL = f"http://127.0.0.1:{CHROME_DEBUG_PORT}"
-DEFAULT_PROFILE_DIR = os.path.expanduser("~/.gemini/antigravity-browser-profile")
+DEFAULT_PROFILE_DIR = os.path.abspath(os.path.expanduser("~/.gemini/antigravity-browser-profile"))
 CHROME_EXECUTABLE = get_chrome_executable()
 
 # Performance Optimization Flags for Headless Chrome
 CHROME_FLAGS = [
     f"--remote-debugging-port={CHROME_DEBUG_PORT}",
     f"--user-data-dir={DEFAULT_PROFILE_DIR}",
-    "--headless",
+    "--headless=new" if os.name == 'nt' else "--headless",
     "--disable-gpu",
     "--no-sandbox",
     "--disable-extensions",

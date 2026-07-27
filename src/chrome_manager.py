@@ -28,15 +28,24 @@ def start_chrome() -> bool:
 
     print(f"[CHROME] Launching optimized headless Chrome daemon on port {config.CHROME_DEBUG_PORT}...")
     cmd = [config.CHROME_EXECUTABLE] + config.CHROME_FLAGS
-    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    for _ in range(15):
+    # Poll for port availability (up to 8 seconds for slower Windows cold starts)
+    for _ in range(40):
         if is_chrome_running():
             print("[CHROME] Headless Chrome started successfully and is ready.")
             return True
         time.sleep(0.2)
 
-    print("[ERROR] Failed to connect to Chrome remote debugging port.")
+    # If it failed to start, check if process died and print output
+    if proc.poll() is not None:
+        _, stderr_out = proc.communicate()
+        print(f"[ERROR] Chrome process exited prematurely with code {proc.returncode}.")
+        if stderr_out:
+            print(f"[ERROR] Chrome Stderr: {stderr_out.decode('utf-8', errors='ignore')}")
+
+    print("[ERROR] Failed to connect to Chrome remote debugging port 9222.")
+    print("[HINT] Make sure no existing Chrome process is locking port 9222 or the profile folder.")
     return False
 
 if __name__ == '__main__':
