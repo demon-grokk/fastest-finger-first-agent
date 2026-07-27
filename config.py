@@ -75,18 +75,20 @@ CHROME_DEBUG_URL = f"http://127.0.0.1:{CHROME_DEBUG_PORT}"
 DEFAULT_PROFILE_DIR = os.path.abspath(os.path.expanduser("~/.fff-agent-profile"))
 CHROME_EXECUTABLE = get_chrome_executable()
 
-# Performance Optimization Flags for Headless Chrome
+# Performance Optimization Flags for Headless Chrome (Cross-Platform)
 CHROME_FLAGS = [
     f"--remote-debugging-port={CHROME_DEBUG_PORT}",
     f"--user-data-dir={DEFAULT_PROFILE_DIR}",
-    "--headless=new" if os.name == 'nt' else "--headless",
+    "--headless",
     "--disable-gpu",
-    "--no-sandbox",
     "--disable-extensions",
     "--disable-background-networking",
     "--disable-sync",
     "--blink-settings=imagesEnabled=false"
 ]
+
+if os.name != 'nt':
+    CHROME_FLAGS.append("--no-sandbox")
 
 # Timeouts (in seconds)
 URL_POLL_TIMEOUT = 600       # Time to wait for url.txt when listening

@@ -24,7 +24,7 @@ async def listen_and_solve(url_override: str = None):
     cleanup_ipc_files()
 
     if not start_chrome():
-        sys.exit(1)
+        print("[DAEMON] Pre-warm daemon skipped. Proceeding with inline browser launch fallback...")
 
     url = url_override
 

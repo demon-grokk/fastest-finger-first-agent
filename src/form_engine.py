@@ -9,11 +9,23 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 async def connect_to_browser() -> tuple[Browser, Page]:
-    """Connects to the active remote debugging Chrome instance."""
-    browser = await connect(
-        browserURL=config.CHROME_DEBUG_URL,
-        defaultViewport={'width': 1050, 'height': 850}
-    )
+    """Connects to active remote debugging Chrome or launches via Pyppeteer fallback."""
+    try:
+        browser = await connect(
+            browserURL=config.CHROME_DEBUG_URL,
+            defaultViewport={'width': 1050, 'height': 850}
+        )
+    except Exception:
+        print("[CHROME] Remote port connection fallback: launching Chrome directly...")
+        launch_kwargs = {
+            'headless': True,
+            'args': config.CHROME_FLAGS,
+            'defaultViewport': {'width': 1050, 'height': 850}
+        }
+        if config.CHROME_EXECUTABLE and os.path.exists(config.CHROME_EXECUTABLE):
+            launch_kwargs['executablePath'] = config.CHROME_EXECUTABLE
+        browser = await launch(**launch_kwargs)
+
     pages = await browser.pages()
     page = pages[0] if len(pages) > 0 else await browser.newPage()
     return browser, page

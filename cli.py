@@ -19,7 +19,7 @@ async def execute_oneshot(url: str, answers_json: str, submit: bool):
     """Executes a direct one-shot quiz submission."""
     answers = json.loads(answers_json)
     if not start_chrome():
-        sys.exit(1)
+        print("[CLI] Pre-warm daemon skipped. Proceeding with inline browser launch fallback...")
 
     print(f"[CLI] Connecting to Chrome & navigating to {url}...")
     browser, page = await connect_to_browser()
