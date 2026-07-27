@@ -21,6 +21,11 @@ def start_chrome() -> bool:
         print(f"[CHROME] Chrome is already active on port {config.CHROME_DEBUG_PORT}.")
         return True
 
+    if not config.CHROME_EXECUTABLE or not os.path.exists(config.CHROME_EXECUTABLE):
+        print(f"[ERROR] Chrome executable not found at '{config.CHROME_EXECUTABLE}'.")
+        print("[ERROR] Please make sure Google Chrome is installed, or set CHROME_PATH environment variable.")
+        return False
+
     print(f"[CHROME] Launching optimized headless Chrome daemon on port {config.CHROME_DEBUG_PORT}...")
     cmd = [config.CHROME_EXECUTABLE] + config.CHROME_FLAGS
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

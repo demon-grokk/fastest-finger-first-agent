@@ -1,4 +1,5 @@
 import os
+import sys
 
 # Project Root Directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,11 +26,54 @@ QUESTIONS_FILE = os.path.join(BASE_DIR, "questions.json")
 ANSWERS_FILE = os.path.join(BASE_DIR, "answers.json")
 SCREENSHOT_PATH = os.path.join(BASE_DIR, "submission_confirmation.png")
 
-# Chrome Configuration
+# Chrome Executable Finder (Cross-Platform: Windows, macOS, Linux)
+def get_chrome_executable() -> str:
+    env_path = os.environ.get("CHROME_PATH") or os.environ.get("CHROME_EXECUTABLE")
+    if env_path and os.path.exists(env_path):
+        return env_path
+
+    import shutil
+    for name in ["google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser"]:
+        found = shutil.which(name)
+        if found:
+            return found
+
+    if os.name == 'nt':  # Windows
+        candidates = [
+            os.path.expandvars(r"%ProgramFiles%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%LocalAppData%\Google\Chrome\Application\chrome.exe"),
+            os.path.expandvars(r"%ProgramFiles%\Chromium\Application\chrome.exe"),
+            os.path.expandvars(r"%LocalAppData%\Chromium\Application\chrome.exe"),
+        ]
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                return candidate
+    elif sys.platform == 'darwin':  # macOS
+        candidates = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium"
+        ]
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                return candidate
+    else:  # Linux
+        candidates = [
+            "/opt/google/chrome/chrome",
+            "/usr/bin/google-chrome",
+            "/usr/bin/chromium-browser",
+            "/usr/bin/chromium"
+        ]
+        for candidate in candidates:
+            if os.path.exists(candidate):
+                return candidate
+
+    return "chrome" if os.name == 'nt' else "/opt/google/chrome/chrome"
+
 CHROME_DEBUG_PORT = 9222
 CHROME_DEBUG_URL = f"http://127.0.0.1:{CHROME_DEBUG_PORT}"
 DEFAULT_PROFILE_DIR = os.path.expanduser("~/.gemini/antigravity-browser-profile")
-CHROME_EXECUTABLE = "/opt/google/chrome/chrome"
+CHROME_EXECUTABLE = get_chrome_executable()
 
 # Performance Optimization Flags for Headless Chrome
 CHROME_FLAGS = [
