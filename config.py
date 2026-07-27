@@ -3,15 +3,21 @@ import os
 # Project Root Directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Auto-load .env file if present (no external packages needed)
+# Auto-load .env file if present (cross-platform, handles Windows UTF-16/BOM encoding)
 _env_path = os.path.join(BASE_DIR, '.env')
 if os.path.exists(_env_path):
-    with open(_env_path) as _f:
-        for _line in _f:
-            _line = _line.strip()
-            if _line and not _line.startswith('#') and '=' in _line:
-                _key, _val = _line.split('=', 1)
-                os.environ.setdefault(_key.strip(), _val.strip())
+    try:
+        # Try utf-8-sig first (handles BOM from Windows Notepad/PowerShell)
+        with open(_env_path, encoding='utf-8-sig') as _f:
+            _content = _f.read()
+    except Exception:
+        with open(_env_path, encoding='utf-8', errors='ignore') as _f:
+            _content = _f.read()
+    for _line in _content.splitlines():
+        _line = _line.replace('\x00', '').strip()  # Strip null bytes (UTF-16 artifact)
+        if _line and not _line.startswith('#') and '=' in _line:
+            _key, _val = _line.split('=', 1)
+            os.environ.setdefault(_key.strip(), _val.strip())
 
 # Data & Scratch File Paths for IPC
 URL_FILE = os.path.join(BASE_DIR, "url.txt")

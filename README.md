@@ -88,15 +88,22 @@ The agent uses **Groq's free API** (no credit card required) to autonomously sol
 3. Copy your key (it starts with `gsk_...`).
 
 ### Step 2: Create Your `.env` File
+
 In the project root directory, create a file named `.env`:
 
+**Linux / macOS:**
 ```bash
-# In the project folder, run:
 echo 'GROQ_API_KEY=your_groq_api_key_here' > .env
 ```
 
-Or create the file manually with the following content:
+**Windows (PowerShell) — use this exact command to avoid encoding issues:**
+```powershell
+"GROQ_API_KEY=your_groq_api_key_here" | Out-File -FilePath .env -Encoding utf8
+```
 
+> ⚠️ **Windows users**: Do NOT create `.env` with Notepad — it saves in UTF-16 which causes errors. Use the PowerShell command above or VS Code to create the file.
+
+The `.env` file should look like this:
 ```env
 GROQ_API_KEY=gsk_your_actual_key_here
 ```
