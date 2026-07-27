@@ -72,7 +72,7 @@ def get_chrome_executable() -> str:
 
 CHROME_DEBUG_PORT = 9222
 CHROME_DEBUG_URL = f"http://127.0.0.1:{CHROME_DEBUG_PORT}"
-DEFAULT_PROFILE_DIR = os.path.abspath(os.path.expanduser("~/.gemini/antigravity-browser-profile"))
+DEFAULT_PROFILE_DIR = os.path.abspath(os.path.expanduser("~/.fff-agent-profile"))
 CHROME_EXECUTABLE = get_chrome_executable()
 
 # Performance Optimization Flags for Headless Chrome
