@@ -13,13 +13,13 @@ import os
 import config
 from src.chrome_manager import start_chrome
 from src.ipc_solver import listen_and_solve
-from src.form_engine import connect_to_browser, fill_and_submit_form
+from src.webhook_server import start_webhook_server
 
 async def execute_oneshot(url: str, answers_json: str, submit: bool):
     """Executes a direct one-shot quiz submission."""
     answers = json.loads(answers_json)
     if not start_chrome():
-        sys.exit(1)
+        print("[CLI] Pre-warm daemon skipped. Proceeding with inline browser launch fallback...")
 
     print(f"[CLI] Connecting to Chrome & navigating to {url}...")
     browser, page = await connect_to_browser()
@@ -43,6 +43,10 @@ def main():
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
+    # Command: watch
+    watch_parser = subparsers.add_parser("watch", help="Starts the live HTTP Webhook Server for Tampermonkey")
+    watch_parser.add_argument("--port", type=int, default=5000, help="Port to listen on (default: 5000)")
+
     # Command: start-chrome
     subparsers.add_parser("start-chrome", help="Pre-warms headless Chrome on port 9222")
 
@@ -58,7 +62,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "start-chrome":
+    if args.command == "watch":
+        start_webhook_server(args.port)
+    elif args.command == "start-chrome":
         start_chrome()
     elif args.command == "listen":
         asyncio.run(listen_and_solve(args.url))
