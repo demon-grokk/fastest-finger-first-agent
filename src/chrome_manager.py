@@ -7,6 +7,30 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
+def clear_profile_locks():
+    """Removes leftover Chrome singleton lock files if present."""
+    lock_files = ["SingletonLock", "SingletonSocket", "SingletonCookie"]
+    for lock in lock_files:
+        p = os.path.join(config.DEFAULT_PROFILE_DIR, lock)
+        if os.path.exists(p) or os.path.islink(p):
+            try:
+                os.remove(p)
+            except Exception:
+                pass
+
+def stop_chrome():
+    """Stops any running background Chrome processes locking our profile."""
+    try:
+        if os.name == 'nt':
+            subprocess.run(['taskkill', '/F', '/IM', 'chrome.exe'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            subprocess.run(['pkill', '-f', config.DEFAULT_PROFILE_DIR], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.run(['pkill', '-f', f'remote-debugging-port={config.CHROME_DEBUG_PORT}'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        pass
+    clear_profile_locks()
+    time.sleep(1.0)
+
 def is_chrome_running() -> bool:
     """Checks if headless Chrome is active and responding on the debugging port."""
     try:

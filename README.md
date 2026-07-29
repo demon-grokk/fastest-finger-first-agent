@@ -112,6 +112,28 @@ GROQ_API_KEY=gsk_your_actual_key_here
 
 ---
 
+## 🔐 Handling Restricted Google Forms (Google Sign-In Required)
+
+Some Google Forms require users to be logged into a Google Account (e.g. *"Limit to 1 response"* or organization-restricted quizzes).
+
+If a form requires Google Login, running `python cli.py listen` will show:
+`[ERROR] GOOGLE SIGN-IN REQUIRED!`
+
+### Solution: One-Time Google Login
+Run the new `login` command **once** on your machine:
+
+```bash
+python cli.py login
+```
+
+1. This opens a **visible Chrome browser** window pointing to Google Login.
+2. Log into your Google Account.
+3. Return to the terminal and press **ENTER**.
+
+> **That's it!** Your Google session cookies are permanently saved in `~/.fff-agent-profile`. All future `python cli.py listen` runs will automatically run fully signed in!
+
+---
+
 ## 💻 How to Run
 
 ### ✅ Recommended: Autonomous Mode (Zero Human Involvement)

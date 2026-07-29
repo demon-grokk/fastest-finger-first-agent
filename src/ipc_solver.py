@@ -51,7 +51,26 @@ async def listen_and_solve(url_override: str = None):
 
     browser, page = await connect_to_browser()
     await page.goto(url, {'waitUntil': 'domcontentloaded'})
-    await page.waitForSelector('div[role="listitem"]', {'timeout': 10000})
+
+    # Check if Google Sign-in redirect occurred
+    curr_url = page.url
+    page_title = await page.title()
+    if 'accounts.google.com' in curr_url or 'sign-in' in page_title.lower() or 'signin' in curr_url.lower():
+        print("\n[ERROR] GOOGLE SIGN-IN REQUIRED!")
+        print("[ERROR] This Google Form requires you to be logged into a Google account.")
+        print("[ACTION REQUIRED] Please run 'python cli.py login' once in your terminal to sign into Google.")
+        await page.screenshot({'path': config.SCREENSHOT_PATH})
+        await browser.disconnect()
+        sys.exit(1)
+
+    try:
+        await page.waitForSelector('div[role="listitem"]', {'timeout': 10000})
+    except Exception:
+        print("\n[ERROR] Question elements ('div[role=\"listitem\"]') not found on the page.")
+        print(f"[ERROR] Current Page Title: '{await page.title()}' | Page URL: '{page.url}'")
+        await page.screenshot({'path': config.SCREENSHOT_PATH})
+        await browser.disconnect()
+        sys.exit(1)
 
     # Extract questions
     questions = await extract_questions(page)
