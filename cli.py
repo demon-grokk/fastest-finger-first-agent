@@ -14,6 +14,7 @@ import config
 from src.chrome_manager import start_chrome
 from src.ipc_solver import listen_and_solve
 from src.webhook_server import start_webhook_server
+from src.gmail_watcher import watch_gmail_inbox
 
 async def execute_oneshot(url: str, answers_json: str, submit: bool):
     """Executes a direct one-shot quiz submission."""
@@ -84,13 +85,20 @@ async def login_google():
 
     stop_chrome()
     print("[LOGIN] Success! Your Google session is saved in your profile.")
-    print("[LOGIN] All future 'python cli.py listen' runs will now use this signed-in account automatically!\n")
+    print("[LOGIN] All future 'python cli.py listen' and 'python cli.py watch-gmail' runs will now use this signed-in account automatically!\n")
 
 def main():
     parser = argparse.ArgumentParser(
         description="Fastest Finger First AI Quiz Agent - High Speed Google Forms Solver (<5s Benchmark)"
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # Command: login
+    subparsers.add_parser("login", help="Launches visible Chrome window for one-time Google Account login")
+
+    # Command: watch-gmail
+    watch_gmail_parser = subparsers.add_parser("watch-gmail", help="Monitors Gmail inbox natively in headless Chrome (Top-5 Safeguard)")
+    watch_gmail_parser.add_argument("--top-limit", type=int, default=5, help="Limit scan to top N inbox emails (default: 5)")
 
     # Command: watch
     watch_parser = subparsers.add_parser("watch", help="Starts the live HTTP Webhook Server for Tampermonkey")
@@ -111,7 +119,11 @@ def main():
 
     args = parser.parse_args()
 
-    if args.command == "watch":
+    if args.command == "login":
+        asyncio.run(login_google())
+    elif args.command == "watch-gmail":
+        asyncio.run(watch_gmail_inbox(args.top_limit))
+    elif args.command == "watch":
         start_webhook_server(args.port)
     elif args.command == "start-chrome":
         start_chrome()
